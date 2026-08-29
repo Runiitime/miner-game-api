@@ -1,0 +1,20 @@
+{
+  "pickaxe": {
+    "id": "pickaxe",
+    "label": "Кирка",
+    "price": 3000,
+    "isSold": false
+  },
+  "air": {
+    "id": "air",
+    "label": "Вентиляция в шахту",
+    "price": 15000,
+    "isSold": false
+  },
+  "trolley": {
+    "id": "trolley",
+    "label": "Вагонетка",
+    "price": 50000,
+    "isSold": false
+  }
+}

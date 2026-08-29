@@ -1,0 +1,27 @@
+{
+  "junior": {
+    "level": "junior",
+    "salary": 5,
+    "energy": 30,
+    "coal": 1,
+    "breakTime": 3,
+    "levelUp": false
+  },
+  "middle": {
+    "level": "middle",
+    "salary": 50,
+    "energy": 45,
+    "coal": 3,
+    "breakTime": 2,
+    "levelUp": false
+  },
+  "senior": {
+    "level": "senior",
+    "salary": 450,
+    "energy": 60,
+    "coal": 10,
+    "breakTime": 1,
+    "levelUp": true,
+    "levelUpInfo": "С каждой новой добычей, характеристика \"Получает угля за одну добычу\" увеличивается на 3 единицы"
+  }
+}

@@ -1,8 +1,11 @@
 package worker
 
 import (
+	"context"
+	"fmt"
 	"miner-game-api/helpers"
 	"miner-game-api/logic/miner"
+	"time"
 )
 
 type Junior struct {
@@ -14,18 +17,41 @@ func NewJuniorWorker() *Junior {
 		worker: miner.WorkerInfo{
 			Id:        helpers.GenerateId(),
 			Salary:    5,
-			Energy:    30,
+			Energy:    3,
 			Coal:      1,
-			BreakTime: 3,
+			BreakTime: 2,
 			LevelUp:   false,
 		},
 	}
 }
 
-func (s *Junior) Run() {
+func (j *Junior) Run(ctx context.Context, ch chan int64) {
+	jCtx, cancel := context.WithCancel(ctx)
+	defer close(ch)
+	defer cancel()
+	defer fmt.Println("Jun run done")
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-jCtx.Done():
+			return
+		case <-time.After(time.Duration(j.Info().BreakTime) * time.Millisecond):
+			if j.worker.Energy == 0 {
+				cancel()
+				return
+			}
 
+			ch <- j.worker.Coal
+			j.DecreaseEnergy()
+		}
+	}
 }
 
-func (s *Junior) Info() miner.WorkerInfo {
-	return s.worker
+func (j *Junior) DecreaseEnergy() {
+	j.worker.Energy--
+}
+
+func (j *Junior) Info() miner.WorkerInfo {
+	return j.worker
 }

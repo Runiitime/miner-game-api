@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"miner-game-api/helpers"
 	"miner-game-api/logic/balance"
+	"miner-game-api/logic/miner"
 	"slices"
 	"sync"
 	"time"
@@ -15,15 +16,18 @@ type Facility struct {
 	balance    *balance.Balance
 	ctx        context.Context
 	wg         *sync.WaitGroup
+	miners     []*miner.Miner
+	mtx        *sync.Mutex
 }
 
 func NewFacility(ctx context.Context, wg *sync.WaitGroup) *Facility {
-
 	return &Facility{
 		equipments: make([]string, 0),
 		balance:    balance.NewBalance(),
 		ctx:        ctx,
 		wg:         wg,
+		miners:     make([]*miner.Miner, 0),
+		mtx:        new(sync.Mutex),
 	}
 }
 
@@ -81,8 +85,22 @@ func (f *Facility) GetMinersInfoByLevel() {}
 /*
 HireMiner Нанять шахтёра
 */
-func (f *Facility) HireMiner(level string) {
+func (f *Facility) HireMiner(miner *miner.Miner) {
+	defer f.wg.Done()
+	// Наняла шахтёра
+	f.mtx.Lock()
+	f.miners = append(f.miners, miner)
+	f.mtx.Unlock()
+	// Нанятый шахтёр начал работать
+	wg := new(sync.WaitGroup)
+	mCtx, _ := context.WithCancel(f.ctx)
+	wg.Add(1)
+	go miner.Run(mCtx, wg)
 
+	wg.Wait()
+
+	// После окончания работы, увеличиваю баланс предприятия на суммарное кол-во добытого угля шахтёром
+	f.balance.Increase(miner.Coal)
 }
 
 /*

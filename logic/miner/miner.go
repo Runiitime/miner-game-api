@@ -2,7 +2,6 @@ package miner
 
 import (
 	"context"
-	"fmt"
 	"sync"
 )
 
@@ -12,7 +11,6 @@ type WorkerInfo struct {
 	Energy    int
 	Coal      int64
 	BreakTime int
-	LevelUp   bool
 }
 
 type MinerMethods interface {
@@ -33,7 +31,6 @@ func NewMiner(miner MinerMethods) *Miner {
 
 func (m *Miner) Run(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
-	defer fmt.Println("Miner run is done")
 
 	ch := make(chan int64)
 
@@ -46,7 +43,6 @@ func (m *Miner) Run(ctx context.Context, wg *sync.WaitGroup) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		defer fmt.Println("Jun sum done")
 		for v := range ch {
 			m.Coal += v
 		}

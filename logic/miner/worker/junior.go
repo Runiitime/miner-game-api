@@ -2,7 +2,6 @@ package worker
 
 import (
 	"context"
-	"fmt"
 	"miner-game-api/helpers"
 	"miner-game-api/logic/miner"
 	"time"
@@ -20,7 +19,6 @@ func NewJuniorWorker() *Junior {
 			Energy:    3,
 			Coal:      1,
 			BreakTime: 2,
-			LevelUp:   false,
 		},
 	}
 }
@@ -29,7 +27,6 @@ func (j *Junior) Run(ctx context.Context, ch chan int64) {
 	jCtx, cancel := context.WithCancel(ctx)
 	defer close(ch)
 	defer cancel()
-	defer fmt.Println("Jun run done")
 	for {
 		select {
 		case <-ctx.Done():
@@ -38,17 +35,16 @@ func (j *Junior) Run(ctx context.Context, ch chan int64) {
 			return
 		case <-time.After(time.Duration(j.Info().BreakTime) * time.Millisecond):
 			if j.worker.Energy == 0 {
-				cancel()
 				return
 			}
 
 			ch <- j.worker.Coal
-			j.DecreaseEnergy()
+			j.decreaseEnergy()
 		}
 	}
 }
 
-func (j *Junior) DecreaseEnergy() {
+func (j *Junior) decreaseEnergy() {
 	j.worker.Energy--
 }
 

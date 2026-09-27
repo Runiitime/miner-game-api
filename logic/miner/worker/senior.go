@@ -3,36 +3,64 @@ package worker
 import (
 	"context"
 	"miner-game-api/helpers"
+	"miner-game-api/logic/miner"
+	"sync"
+	"time"
 )
 
 type Senior struct {
-	id        string
-	salary    int
-	energy    int
-	coal      int64
-	breakTime int
-	levelUp   bool
+	worker miner.WorkerInfo
 }
 
 func NewSeniorWorker() *Senior {
 	return &Senior{
-		id:        helpers.GenerateId(),
-		salary:    450,
-		energy:    60,
-		coal:      10,
-		breakTime: 1,
-		levelUp:   true,
+		worker: miner.WorkerInfo{
+			Id:        helpers.GenerateId(),
+			Salary:    450,
+			Energy:    60,
+			Coal:      10,
+			BreakTime: 1,
+		},
 	}
 }
 
 func (s *Senior) Run(ctx context.Context, ch chan int64) {
+	sCtx, cancel := context.WithCancel(ctx)
+	mtx := sync.Mutex{}
+	defer close(ch)
+	defer cancel()
 
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-sCtx.Done():
+			return
+		case <-time.After(time.Duration(s.worker.BreakTime) * time.Second):
+			if s.worker.Energy == 0 {
+				cancel()
+				return
+			}
+
+			mtx.Lock()
+			ch <- s.worker.Coal
+			mtx.Unlock()
+			s.decreaseEnergy()
+			s.levelUp(&mtx) // TODO возможность не по ссылке
+		}
+	}
 }
 
-func (s *Senior) LevelUp() {
-	s.coal += 3
+func (s *Senior) levelUp(mtx *sync.Mutex) {
+	mtx.Lock()
+	s.worker.Coal += 1
+	mtx.Unlock()
 }
 
-func (s *Senior) Info() {
+func (s *Senior) decreaseEnergy() {
+	s.worker.Energy--
+}
 
+func (s *Senior) Info() miner.WorkerInfo {
+	return s.worker
 }

@@ -3,40 +3,55 @@ package main
 import (
 	"context"
 	"fmt"
+	"miner-game-api/logic/facility"
 	"miner-game-api/logic/miner"
 	"miner-game-api/logic/miner/worker"
 	"sync"
 )
 
-var energy = 5
-
-const coal int64 = 1
-
-var sum int64 = 0
-var ctx, cancel = context.WithCancel(context.Background())
-
 func main() {
-	wg := new(sync.WaitGroup)
+	var ctx, _ = context.WithCancel(context.Background())
+	fwg := new(sync.WaitGroup)
+	facil := facility.NewFacility(ctx, fwg)
 
-	var workers []*miner.Miner
+	fwg.Add(1)
+	go func() {
+		defer fwg.Done()
+		for i := 1; i <= 3; i++ {
+			fwg.Add(1)
+			jun := worker.NewJuniorWorker()
+			mnr := miner.NewMiner(jun)
 
-	for i := 0; i < 4; i++ {
-		jun := worker.NewJuniorWorker()
-		mnr := miner.NewMiner(jun)
+			go facil.HireMiner(mnr)
+		}
+	}()
 
-		workers = append(workers, mnr)
-	}
+	fwg.Add(1)
+	go func() {
+		defer fwg.Done()
+		for i := 1; i <= 2; i++ {
+			fwg.Add(1)
+			mid := worker.NewMiddleWorker()
+			mnr := miner.NewMiner(mid)
 
-	for _, m := range workers {
-		wg.Add(1)
-		go m.Run(ctx, wg)
-	}
+			go facil.HireMiner(mnr)
+		}
+	}()
 
-	wg.Wait()
+	fwg.Add(1)
+	go func() {
+		defer fwg.Done()
+		for i := 1; i <= 1; i++ {
+			fwg.Add(1)
+			sen := worker.NewSeniorWorker()
+			mnr := miner.NewMiner(sen)
 
-	for _, m := range workers {
-		sum += m.Coal
-	}
+			go facil.HireMiner(mnr)
+		}
+	}()
 
-	fmt.Println("All coal:", sum)
+	fwg.Wait()
+
+	fmt.Println("done")
+	fmt.Println("Facility balance:", facil.GetBalance())
 }

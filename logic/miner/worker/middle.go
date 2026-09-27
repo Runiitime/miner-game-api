@@ -1,27 +1,53 @@
 package worker
 
-import "miner-game-api/helpers"
+import (
+	"context"
+	"miner-game-api/helpers"
+	"miner-game-api/logic/miner"
+	"time"
+)
 
 type Middle struct {
-	id        string
-	salary    int
-	energy    int
-	coal      int
-	breakTime int
-	levelUp   bool
+	worker miner.WorkerInfo
 }
 
 func NewMiddleWorker() *Middle {
 	return &Middle{
-		id:        helpers.GenerateId(),
-		salary:    50,
-		energy:    45,
-		coal:      3,
-		breakTime: 2,
-		levelUp:   false,
+		worker: miner.WorkerInfo{
+			Id:        helpers.GenerateId(),
+			Salary:    50,
+			Energy:    45,
+			Coal:      3,
+			BreakTime: 2,
+		},
 	}
 }
 
-func (s *Middle) Run() {
+func (m *Middle) Run(ctx context.Context, ch chan int64) {
+	mCtx, cancel := context.WithCancel(ctx)
+	defer close(ch)
+	defer cancel()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-mCtx.Done():
+			return
+		case <-time.After(time.Duration(m.worker.BreakTime) * time.Millisecond):
+			if m.worker.Energy == 0 {
+				return
+			}
 
+			ch <- m.worker.Coal
+			m.decreaseEnergy()
+		}
+	}
+}
+
+func (m *Middle) decreaseEnergy() {
+	m.worker.Energy--
+}
+
+func (m *Middle) Info() miner.WorkerInfo {
+	return m.worker
 }

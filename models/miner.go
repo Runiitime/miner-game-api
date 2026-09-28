@@ -6,7 +6,7 @@ type MinerId struct {
 
 type MinerInfo struct {
 	Level       string `json:"level"`
-	Salary      int    `json:"salary"`
+	Salary      int64  `json:"salary"`
 	Energy      int    `json:"energy"`
 	Coal        int64  `json:"coal"`
 	BreakTime   int    `json:"breakTime"`

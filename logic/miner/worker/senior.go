@@ -3,18 +3,18 @@ package worker
 import (
 	"context"
 	"miner-game-api/helpers"
-	"miner-game-api/logic/miner"
+	"miner-game-api/models"
 	"sync"
 	"time"
 )
 
 type Senior struct {
-	worker miner.WorkerInfo
+	worker models.WorkerInfo
 }
 
 func NewSeniorWorker() *Senior {
 	return &Senior{
-		worker: miner.WorkerInfo{
+		worker: models.WorkerInfo{
 			Id:        helpers.GenerateId(),
 			Salary:    450,
 			Energy:    60,
@@ -61,6 +61,6 @@ func (s *Senior) decreaseEnergy() {
 	s.worker.Energy--
 }
 
-func (s *Senior) Info() miner.WorkerInfo {
+func (s *Senior) Info() models.WorkerInfo {
 	return s.worker
 }

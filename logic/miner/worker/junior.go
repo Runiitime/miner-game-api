@@ -3,22 +3,25 @@ package worker
 import (
 	"context"
 	"miner-game-api/helpers"
-	"miner-game-api/logic/miner"
+	"miner-game-api/models"
+	"sync"
 	"time"
 )
 
 type Junior struct {
-	worker miner.WorkerInfo
+	mtx    sync.Mutex
+	worker models.WorkerInfo
 }
 
 func NewJuniorWorker() *Junior {
 	return &Junior{
-		worker: miner.WorkerInfo{
+		mtx: sync.Mutex{},
+		worker: models.WorkerInfo{
 			Id:        helpers.GenerateId(),
 			Salary:    5,
-			Energy:    3,
+			Energy:    30,
 			Coal:      1,
-			BreakTime: 2,
+			BreakTime: 3,
 		},
 	}
 }
@@ -33,8 +36,11 @@ func (j *Junior) Run(ctx context.Context, ch chan int64) {
 			return
 		case <-jCtx.Done():
 			return
-		case <-time.After(time.Duration(j.Info().BreakTime) * time.Millisecond):
-			if j.worker.Energy == 0 {
+		case <-time.After(time.Duration(j.Info().BreakTime) * time.Second):
+			j.mtx.Lock()
+			energy := j.worker.Energy
+			j.mtx.Unlock()
+			if energy == 0 {
 				return
 			}
 
@@ -45,9 +51,11 @@ func (j *Junior) Run(ctx context.Context, ch chan int64) {
 }
 
 func (j *Junior) decreaseEnergy() {
+	j.mtx.Lock()
+	defer j.mtx.Unlock()
 	j.worker.Energy--
 }
 
-func (j *Junior) Info() miner.WorkerInfo {
+func (j *Junior) Info() models.WorkerInfo {
 	return j.worker
 }

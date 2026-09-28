@@ -7,6 +7,6 @@ type EquipmentId struct {
 type Equipment struct {
 	Id     string
 	Label  string
-	Price  int
+	Price  int64
 	IsSold bool
 }

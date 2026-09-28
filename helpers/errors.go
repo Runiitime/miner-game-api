@@ -28,3 +28,5 @@ var ErrEmptyQuery = errors.New("Empty query param")
 
 // Empty query param
 var ErrJSONUnmarshal = errors.New("Failed to json unmarshal")
+
+var ErrNotEnoughBalance = errors.New("Not enough balance")

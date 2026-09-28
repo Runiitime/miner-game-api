@@ -85,12 +85,38 @@ func (f *Facility) GetMinersInfoByLevel() {}
 /*
 HireMiner Нанять шахтёра
 */
-func (f *Facility) HireMiner(miner *miner.Miner) {
+func (f *Facility) HireMiner(level string) {
+	// Наняла шахтёра
+	mnr := miner.Hire(level)
+	f.mtx.Lock()
+	f.miners = append(f.miners, mnr)
+	f.mtx.Unlock()
+
+	go f.doMine(mnr)
+}
+
+/*
+doMine Отправить шахтёра работать
+*/
+func (f *Facility) doMine(mnr *miner.Miner) {
+	wg := new(sync.WaitGroup)
+	mCtx, _ := context.WithCancel(f.ctx)
+	wg.Add(1)
+	go mnr.Run(mCtx, wg)
+
+	wg.Wait()
+	f.balance.Increase(mnr.Coal)
+}
+
+/*
+HireMiner Нанять шахтёра TODO OA удалить позже
+*/
+func (f *Facility) HireMiner2(miner *miner.Miner) {
 	defer f.wg.Done()
 	// Наняла шахтёра
-	f.mtx.Lock()
-	f.miners = append(f.miners, miner)
-	f.mtx.Unlock()
+	//f.mtx.Lock()
+	//f.miners = append(f.miners, miner)
+	//f.mtx.Unlock()
 	// Нанятый шахтёр начал работать
 	wg := new(sync.WaitGroup)
 	mCtx, _ := context.WithCancel(f.ctx)
@@ -101,13 +127,6 @@ func (f *Facility) HireMiner(miner *miner.Miner) {
 
 	// После окончания работы, увеличиваю баланс предприятия на суммарное кол-во добытого угля шахтёром
 	f.balance.Increase(miner.Coal)
-}
-
-/*
-RunMiner Отправить шахтёра работать
-*/
-func (f *Facility) RunMiner(id string) {
-
 }
 
 // ИНСТРУМЕНТЫ

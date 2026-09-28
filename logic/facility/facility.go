@@ -15,16 +15,20 @@ type Facility struct {
 	equipments []string
 	balance    *balance.Balance
 	ctx        context.Context
+	stop       context.CancelFunc
 	wg         *sync.WaitGroup
 	miners     []*miner.Miner
 	mtx        *sync.Mutex
 }
 
 func NewFacility(ctx context.Context, wg *sync.WaitGroup) *Facility {
+	fCtx, cancel := context.WithCancel(ctx)
+
 	return &Facility{
 		equipments: make([]string, 0),
 		balance:    balance.NewBalance(),
-		ctx:        ctx,
+		ctx:        fCtx,
+		stop:       cancel,
 		wg:         wg,
 		miners:     make([]*miner.Miner, 0),
 		mtx:        new(sync.Mutex),
@@ -50,7 +54,9 @@ func (f *Facility) Start() {
 /*
 Stop Остановка/завершение работы предприятия
 */
-func (f *Facility) Stop() {}
+func (f *Facility) Stop() {
+	f.stop()
+}
 
 // Получение информации предприятия
 
@@ -62,7 +68,7 @@ func (f *Facility) GetBalance() int64 {
 }
 
 /*
-GetEquipments Полученть информацию о купленных инструментах
+GetEquipments Получить информацию о купленных инструментах
 */
 func (f *Facility) GetEquipments() []string {
 	return f.equipments
@@ -71,8 +77,16 @@ func (f *Facility) GetEquipments() []string {
 /*
 GetWorkingMiners Получить список всех работающих щахтёров
 */
-func (f *Facility) GetWorkingMiners() {
+func (f *Facility) GetWorkingMiners() []*miner.Miner {
+	var items = make([]*miner.Miner, 0)
+	for _, item := range f.miners {
+		// TODO OA RACE
+		if item.Info().Energy > 0 {
+			items = append(items, item)
+		}
+	}
 
+	return items
 }
 
 /*

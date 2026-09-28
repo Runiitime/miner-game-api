@@ -10,3 +10,5 @@ type Equipment struct {
 	Price  int64
 	IsSold bool
 }
+
+type EquipmentInfoMap = map[string]Equipment

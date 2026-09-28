@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"miner-game-api/helpers"
+	"miner-game-api/logic/equipments"
 	"miner-game-api/logic/facility"
-	"miner-game-api/logic/info"
+	"miner-game-api/logic/miner"
 	"net/http"
 	"slices"
 	"strings"
@@ -12,14 +12,16 @@ import (
 )
 
 type HTTPHandlers struct {
-	facil *facility.Facility
-	info  *info.Info
+	facil          *facility.Facility
+	equipmentStore *equipments.Equipments
+	minersHR       *miner.Miners
 }
 
-func NewHTTPHandlers(facil *facility.Facility, info *info.Info) *HTTPHandlers {
+func NewHTTPHandlers(facil *facility.Facility, eq *equipments.Equipments, mnrs *miner.Miners) *HTTPHandlers {
 	return &HTTPHandlers{
-		facil: facil,
-		info:  info,
+		facil:          facil,
+		equipmentStore: eq,
+		minersHR:       mnrs,
 	}
 }
 
@@ -31,25 +33,23 @@ func NewHTTPHandlers(facil *facility.Facility, info *info.Info) *HTTPHandlers {
 Получение информации о шахтерах для найма
 */
 func (h *HTTPHandlers) HandlerGetMinersInfo(c *gin.Context) {
-	c.JSON(http.StatusOK, h.info.MinersInfo)
+	c.JSON(http.StatusOK, h.minersHR.Miners)
 }
 
 func (h *HTTPHandlers) HandlerGetSalaryByLevel(c *gin.Context) {
 	level := c.Param("level")
-	levels := h.info.MinerLevels()
+	levels := h.minersHR.Levels
 
 	if !slices.Contains(levels, level) {
 		c.String(http.StatusBadRequest, "Список доступных вариантов: %s", strings.Join(levels, ","))
 		return
 	}
 
-	miner := h.info.MinersInfo[level]
-
-	c.JSON(http.StatusOK, gin.H{"salary": miner.Salary})
+	c.JSON(http.StatusOK, gin.H{"salary": h.minersHR.SalaryByLevel(level)})
 }
 
 func (h *HTTPHandlers) HandlerGetMinersLevels(c *gin.Context) {
-
+	c.JSON(http.StatusOK, h.minersHR.Levels)
 }
 
 /*
@@ -58,39 +58,53 @@ func (h *HTTPHandlers) HandlerGetMinersLevels(c *gin.Context) {
 Получения информации об оборудовании, которое можно приобрести
 */
 func (h *HTTPHandlers) HandlerGetEquipmentsInfo(c *gin.Context) {
-	c.JSON(http.StatusOK, h.info.EquipmentsInfo)
+	c.JSON(http.StatusOK, h.equipmentStore.Equipments)
 }
 
-func HandlerGetWorkingMiners(c *gin.Context) {}
+func (h *HTTPHandlers) HandlerGetWorkingMiners(c *gin.Context) {
+	c.JSON(http.StatusOK, h.facil.GetWorkingMiners())
+}
 
 func (h *HTTPHandlers) HandlerBuyEquipment(c *gin.Context) {
-	equipmentId := c.Param("equipmentId")
-	titles := h.info.EquipmentTitles()
+	id := c.Param("id")
 
-	if !slices.Contains(titles, equipmentId) {
+	titles := h.equipmentStore.Titles
+
+	if !slices.Contains(titles, id) {
 		c.String(http.StatusBadRequest, "Список доступных вариантов: %s", strings.Join(titles, ","))
 		return
 	}
 
-	eq := h.info.EquipmentsInfo[equipmentId]
-
-	if eq.Price > h.facil.GetBalance() {
-		c.String(http.StatusBadRequest, helpers.ErrNotEnoughBalance.Error())
+	if err := h.equipmentStore.BuyCheck(id, h.facil.GetBalance()); err != nil {
+		c.String(http.StatusBadRequest, err.Error())
 		return
 	}
 
-	if err := h.facil.BuyEquipment(equipmentId); err != nil {
+	if err := h.facil.BuyEquipment(id); err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	
+
 	c.Status(http.StatusNoContent)
 }
 
-func HandlerGetEquipmentsStatus(c *gin.Context) {}
+func (h *HTTPHandlers) HandlerGetEquipmentsByStatus(c *gin.Context) {
+	status := c.Query("status")
+
+	items, err := h.equipmentStore.GetEquipmentsByStatus(status)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, items)
+}
 
 func HandlerGetFacilityInfo(c *gin.Context) {}
-func HandlerStop(c *gin.Context)            {}
+
+func (h *HTTPHandlers) HandlerStop(c *gin.Context) {
+	h.facil.Stop()
+}
 
 func (h *HTTPHandlers) HandlerGetBalance(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"balance": h.facil.GetBalance()})
@@ -98,16 +112,15 @@ func (h *HTTPHandlers) HandlerGetBalance(c *gin.Context) {
 
 func (h *HTTPHandlers) HandlerHireMiner(c *gin.Context) {
 	level := c.Param("level")
-	levels := h.info.MinerLevels()
+	levels := h.minersHR.Levels
 
 	if !slices.Contains(levels, level) {
 		c.String(http.StatusBadRequest, "Список доступных вариантов: %s", strings.Join(levels, ","))
 		return
 	}
 
-	miner := h.info.MinersInfo[level]
-	if miner.Salary > h.facil.GetBalance() {
-		c.String(http.StatusBadRequest, helpers.ErrNotEnoughBalance.Error())
+	if err := h.minersHR.HireCheck(level, h.facil.GetBalance()); err != nil {
+		c.String(http.StatusBadRequest, err.Error())
 		return
 	}
 

@@ -12,7 +12,7 @@ func NewHTTPServer(handlers *HTTPHandlers) *HTTPServer {
 
 func (s *HTTPServer) Start(port string) {
 	r := gin.Default()
-
+	
 	r.GET("/info/equipments", s.handlers.HandlerGetEquipmentsInfo)
 	r.GET("/info/miners", s.handlers.HandlerGetMinersInfo)
 	r.GET("/info/miners/:level", s.handlers.HandlerGetSalaryByLevel)

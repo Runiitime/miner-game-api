@@ -13,3 +13,5 @@ type MinerInfo struct {
 	LevelUp     bool   `json:"levelUp"`
 	LevelUpInfo string `json:"levelUpInfo"`
 }
+
+type MinerInfoMap = map[string]MinerInfo

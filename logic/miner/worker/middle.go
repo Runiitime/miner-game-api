@@ -2,7 +2,6 @@ package worker
 
 import (
 	"context"
-	"miner-game-api/helpers"
 	"miner-game-api/models"
 	"time"
 )
@@ -14,7 +13,7 @@ type Middle struct {
 func NewMiddleWorker() *Middle {
 	return &Middle{
 		worker: models.WorkerInfo{
-			Id:        helpers.GenerateId(),
+			Id:        "middle",
 			Salary:    50,
 			Energy:    45,
 			Coal:      3,

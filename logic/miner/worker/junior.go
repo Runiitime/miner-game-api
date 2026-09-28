@@ -2,7 +2,6 @@ package worker
 
 import (
 	"context"
-	"miner-game-api/helpers"
 	"miner-game-api/models"
 	"sync"
 	"time"
@@ -17,7 +16,7 @@ func NewJuniorWorker() *Junior {
 	return &Junior{
 		mtx: sync.Mutex{},
 		worker: models.WorkerInfo{
-			Id:        helpers.GenerateId(),
+			Id:        "junior",
 			Salary:    5,
 			Energy:    30,
 			Coal:      1,

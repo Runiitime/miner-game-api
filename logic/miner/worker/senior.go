@@ -2,7 +2,6 @@ package worker
 
 import (
 	"context"
-	"miner-game-api/helpers"
 	"miner-game-api/models"
 	"sync"
 	"time"
@@ -15,7 +14,7 @@ type Senior struct {
 func NewSeniorWorker() *Senior {
 	return &Senior{
 		worker: models.WorkerInfo{
-			Id:        helpers.GenerateId(),
+			Id:        "senior",
 			Salary:    450,
 			Energy:    60,
 			Coal:      10,

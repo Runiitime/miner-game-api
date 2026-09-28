@@ -44,20 +44,20 @@ func loadEquipments() models.EquipmentInfoMap {
 	return items
 }
 
-func (e *Equipments) BuyCheck(id string, balance int64) error {
+func (e *Equipments) BuyCheck(id string, balance int64) (*models.Equipment, error) {
 	eq := e.Equipments[id]
 	if eq.Price > balance {
-		return helpers.ErrNotEnoughBalance
+		return nil, helpers.ErrNotEnoughBalance
 	}
 
 	if eq.IsSold {
-		return helpers.ErrEquipmentWasSold
+		return nil, helpers.ErrEquipmentWasSold
 	}
 
 	eq.IsSold = true
 	e.Equipments[id] = eq
 
-	return nil
+	return &eq, nil
 }
 
 func (e *Equipments) GetEquipmentsByStatus(status string) (models.EquipmentInfoMap, error) {

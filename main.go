@@ -3,32 +3,22 @@ package main
 import (
 	"context"
 	"miner-game-api/handlers"
+	"miner-game-api/logic/equipments"
 	"miner-game-api/logic/facility"
-	"miner-game-api/logic/info"
-	"sync"
+	"miner-game-api/logic/miner"
 )
 
 func main() {
-	ctx, cancel := context.WithCancel(context.Background())
-	wg := new(sync.WaitGroup)
+	ctx, _ := context.WithCancel(context.Background())
+	mnrHR := miner.NewMinersHR()
+	eqStore := equipments.NewEquipmentsStore()
 
-	facil := facility.NewFacility(ctx, wg)
-	hdls := handlers.NewHTTPHandlers(facil, inf)
+	facil := facility.NewFacility(ctx)
+	hdls := handlers.NewHTTPHandlers(facil, eqStore, mnrHR)
 	server := handlers.NewHTTPServer(hdls)
 
+	go facil.Start()
 	server.Start("9091")
-
-	//r := gin.Default()
-	//
-	//r.GET("/aboba", func(c *gin.Context) {
-	//	c.JSON(200, gin.H{
-	//		"message": "ABOBA",
-	//	})
-	//})
-	//
-	//if err := r.Run(":8080"); err != nil {
-	//	panic(err)
-	//}
 }
 
 //

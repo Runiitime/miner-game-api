@@ -36,6 +36,10 @@ func (h *HTTPHandlers) HandlerGetMinersInfo(c *gin.Context) {
 	c.JSON(http.StatusOK, h.minersHR.Miners)
 }
 
+func (h *HTTPHandlers) HandlerGetMinersLevels(c *gin.Context) {
+	c.JSON(http.StatusOK, h.minersHR.Levels)
+}
+
 func (h *HTTPHandlers) HandlerGetSalaryByLevel(c *gin.Context) {
 	level := c.Param("level")
 	levels := h.minersHR.Levels
@@ -48,23 +52,35 @@ func (h *HTTPHandlers) HandlerGetSalaryByLevel(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"salary": h.minersHR.SalaryByLevel(level)})
 }
 
-func (h *HTTPHandlers) HandlerGetMinersLevels(c *gin.Context) {
-	c.JSON(http.StatusOK, h.minersHR.Levels)
-}
-
 /*
 	HandlerGetEquipmentsInfo
 
 Получения информации об оборудовании, которое можно приобрести
 */
 func (h *HTTPHandlers) HandlerGetEquipmentsInfo(c *gin.Context) {
-	c.JSON(http.StatusOK, h.equipmentStore.Equipments)
+	sold := c.Query("sold")
+
+	if sold == "" {
+		c.JSON(http.StatusOK, h.equipmentStore.Equipments)
+		return
+	}
+
+	items, err := h.equipmentStore.GetEquipmentsByStatus(sold)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, items)
+}
+
+func (h *HTTPHandlers) HandlerGetEquipmentsPositions(c *gin.Context) {
+	c.JSON(http.StatusOK, h.equipmentStore.Titles)
 }
 
 func (h *HTTPHandlers) HandlerGetWorkingMiners(c *gin.Context) {
 	c.JSON(http.StatusOK, h.facil.GetWorkingMiners())
 }
-
 func (h *HTTPHandlers) HandlerBuyEquipment(c *gin.Context) {
 	id := c.Param("id")
 
@@ -75,29 +91,18 @@ func (h *HTTPHandlers) HandlerBuyEquipment(c *gin.Context) {
 		return
 	}
 
-	if err := h.equipmentStore.BuyCheck(id, h.facil.GetBalance()); err != nil {
+	eq, err := h.equipmentStore.BuyCheck(id, h.facil.GetBalance())
+	if err != nil {
 		c.String(http.StatusBadRequest, err.Error())
 		return
 	}
 
-	if err := h.facil.BuyEquipment(id); err != nil {
+	if err := h.facil.BuyEquipment(id, eq.Price); err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	c.Status(http.StatusNoContent)
-}
-
-func (h *HTTPHandlers) HandlerGetEquipmentsByStatus(c *gin.Context) {
-	status := c.Query("status")
-
-	items, err := h.equipmentStore.GetEquipmentsByStatus(status)
-	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	c.JSON(http.StatusOK, items)
 }
 
 func HandlerGetFacilityInfo(c *gin.Context) {}

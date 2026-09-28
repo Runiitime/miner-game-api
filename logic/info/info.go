@@ -3,20 +3,19 @@ package info
 import (
 	"encoding/json"
 	"log"
-	"miner-game-api/logic/miner"
 	"miner-game-api/models"
 	"os"
 )
 
 type EquipmentsInfo = map[string]models.Equipment
-type MinersInfo = map[string]miner.WorkerInfo
+type MinersInfo = map[string]models.MinerInfo
 
 type Info struct {
 	EquipmentsInfo *EquipmentsInfo
 	MinersInfo     *MinersInfo
 }
 
-func NewInfo(eq *EquipmentsInfo, m *MinersInfo) *Info {
+func NewInfo() *Info {
 	return &Info{EquipmentsInfo: loadEquipmentsInfo(), MinersInfo: loadMinersInfo()}
 }
 

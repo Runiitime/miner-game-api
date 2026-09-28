@@ -28,12 +28,22 @@ func HandlerHireMiner(c *gin.Context) {}
 
 func HandlerGetWorkingMiners(c *gin.Context) {}
 
+/*
+	HandlerGetMinersInfo
+
+Получение информации о шахтерах для найма
+*/
 func (h *HTTPHandlers) HandlerGetMinersInfo(c *gin.Context) {
 	c.JSON(http.StatusOK, h.info.MinersInfo)
 }
 
 /* EQUIPMENTS */
 
+/*
+	HandlerGetEquipmentsInfo
+
+Получения информации об оборудовании, которое можно приобрести
+*/
 func (h *HTTPHandlers) HandlerGetEquipmentsInfo(c *gin.Context) {
 	c.JSON(http.StatusOK, h.info.EquipmentsInfo)
 }

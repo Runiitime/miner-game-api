@@ -12,9 +12,9 @@ func main() {
 	ctx, _ := context.WithCancel(context.Background())
 	wg := new(sync.WaitGroup)
 
-	equipments := info.NewEquipments()
+	inf := info.NewInfo()
 	facil := facility.NewFacility(ctx, wg)
-	hdls := handlers.NewHTTPHandlers(facil, equipments)
+	hdls := handlers.NewHTTPHandlers(facil, inf)
 	server := handlers.NewHTTPServer(hdls)
 
 	server.Start("9091")

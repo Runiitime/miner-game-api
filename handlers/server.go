@@ -13,8 +13,8 @@ func NewHTTPServer(handlers *HTTPHandlers) *HTTPServer {
 func (s *HTTPServer) Start(port string) {
 	r := gin.Default()
 
-	r.GET("/equipments", s.handlers.HandlerGetEquipmentsInfo)
-	r.GET("/miners", s.handlers.HandlerGetMinersInfo)
+	r.GET("/info/equipments", s.handlers.HandlerGetEquipmentsInfo)
+	r.GET("/info/miners", s.handlers.HandlerGetMinersInfo)
 
 	if err := r.Run(":" + port); err != nil {
 		panic(err)

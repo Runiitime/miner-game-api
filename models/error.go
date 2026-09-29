@@ -1,4 +1,4 @@
-package types
+package models
 
 import (
 	"encoding/json"
@@ -25,6 +25,6 @@ func DoError(e error, w http.ResponseWriter, status ...int) {
 		httpStatus = status[0]
 	}
 
-	errDTO := ErrorDTO{Message: e.Error()}
+	errDTO := ErrorDTO{Message: e}
 	http.Error(w, errDTO.ToString(), httpStatus)
 }

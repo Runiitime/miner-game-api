@@ -15,17 +15,21 @@ type Facility struct {
 	equipments []string
 	balance    *balance.Balance
 	ctx        context.Context
+	stop       context.CancelFunc
 	wg         *sync.WaitGroup
 	miners     []*miner.Miner
 	mtx        *sync.Mutex
 }
 
-func NewFacility(ctx context.Context, wg *sync.WaitGroup) *Facility {
+func NewFacility(ctx context.Context) *Facility {
+	fCtx, cancel := context.WithCancel(ctx)
+
 	return &Facility{
 		equipments: make([]string, 0),
 		balance:    balance.NewBalance(),
-		ctx:        ctx,
-		wg:         wg,
+		ctx:        fCtx,
+		stop:       cancel,
+		wg:         new(sync.WaitGroup),
 		miners:     make([]*miner.Miner, 0),
 		mtx:        new(sync.Mutex),
 	}
@@ -35,7 +39,6 @@ func NewFacility(ctx context.Context, wg *sync.WaitGroup) *Facility {
 Start Запуск предприятия. Пассивное увеличение баланса предприятия каждую секунду
 */
 func (f *Facility) Start() {
-	defer f.wg.Done()
 	fmt.Println("Предприятие начало работу")
 	for {
 		select {
@@ -50,7 +53,9 @@ func (f *Facility) Start() {
 /*
 Stop Остановка/завершение работы предприятия
 */
-func (f *Facility) Stop() {}
+func (f *Facility) Stop() {
+	f.stop()
+}
 
 // Получение информации предприятия
 
@@ -62,7 +67,7 @@ func (f *Facility) GetBalance() int64 {
 }
 
 /*
-GetEquipments Полученть информацию о купленных инструментах
+GetEquipments Получить информацию о купленных инструментах
 */
 func (f *Facility) GetEquipments() []string {
 	return f.equipments
@@ -71,8 +76,19 @@ func (f *Facility) GetEquipments() []string {
 /*
 GetWorkingMiners Получить список всех работающих щахтёров
 */
-func (f *Facility) GetWorkingMiners() {
-
+func (f *Facility) GetWorkingMiners() []string {
+	var items = make([]string, 0)
+	for _, item := range f.miners {
+		fmt.Println("================================>ITEM", item)
+		// TODO OA RACE
+		f.mtx.Lock()
+		if item.Info().Energy > 0 {
+			items = append(items, item.Info().Id)
+		}
+		f.mtx.Unlock()
+	}
+	fmt.Println("f.miners", f.miners)
+	return items
 }
 
 /*
@@ -85,29 +101,28 @@ func (f *Facility) GetMinersInfoByLevel() {}
 /*
 HireMiner Нанять шахтёра
 */
-func (f *Facility) HireMiner(miner *miner.Miner) {
-	defer f.wg.Done()
+func (f *Facility) HireMiner(level string) {
 	// Наняла шахтёра
+	mnr := miner.Hire(level)
 	f.mtx.Lock()
-	f.miners = append(f.miners, miner)
+	f.miners = append(f.miners, mnr)
+	f.balance.Decrease(mnr.Info().Salary)
 	f.mtx.Unlock()
-	// Нанятый шахтёр начал работать
-	wg := new(sync.WaitGroup)
-	mCtx, _ := context.WithCancel(f.ctx)
-	wg.Add(1)
-	go miner.Run(mCtx, wg)
 
-	wg.Wait()
-
-	// После окончания работы, увеличиваю баланс предприятия на суммарное кол-во добытого угля шахтёром
-	f.balance.Increase(miner.Coal)
+	go f.doMine(mnr)
 }
 
 /*
-RunMiner Отправить шахтёра работать
+doMine Отправить шахтёра работать
 */
-func (f *Facility) RunMiner(id string) {
+func (f *Facility) doMine(mnr *miner.Miner) {
+	wg := new(sync.WaitGroup)
+	mCtx, _ := context.WithCancel(f.ctx)
+	wg.Add(1)
+	go mnr.Run(mCtx, wg)
 
+	wg.Wait()
+	f.balance.Increase(mnr.Coal)
 }
 
 // ИНСТРУМЕНТЫ
@@ -115,11 +130,15 @@ func (f *Facility) RunMiner(id string) {
 /*
 BuyEquipment Покупка инструмаента по ID
 */
-func (f *Facility) BuyEquipment(id string) error {
+func (f *Facility) BuyEquipment(id string, price int64) error {
 	if slices.Contains(f.equipments, id) {
 		return helpers.ErrEquipmentWasAlreadyBought
 	}
 
+	f.mtx.Lock()
+	f.balance.Decrease(price)
 	f.equipments = append(f.equipments, id)
+	f.mtx.Unlock()
+
 	return nil
 }

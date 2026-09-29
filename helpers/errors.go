@@ -11,6 +11,8 @@ var ErrMinerNotFound = errors.New("Miner not found")
 // Equipment was already bought
 var ErrEquipmentWasAlreadyBought = errors.New("Equipment was already bought")
 
+var ErrEquipmentWasSold = errors.New("Equipment was sold")
+
 // Nothing to buy
 var ErrNothingToBuy = errors.New("Nothing to buy")
 
@@ -28,3 +30,5 @@ var ErrEmptyQuery = errors.New("Empty query param")
 
 // Empty query param
 var ErrJSONUnmarshal = errors.New("Failed to json unmarshal")
+
+var ErrNotEnoughBalance = errors.New("Not enough balance")

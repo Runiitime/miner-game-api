@@ -2,20 +2,14 @@ package miner
 
 import (
 	"context"
+	"miner-game-api/logic/miner/worker"
+	"miner-game-api/models"
 	"sync"
 )
 
-type WorkerInfo struct {
-	Id        string
-	Salary    int
-	Energy    int
-	Coal      int64
-	BreakTime int
-}
-
 type MinerMethods interface {
 	Run(ctx context.Context, ch chan int64)
-	Info() WorkerInfo
+	Info() models.WorkerInfo
 }
 
 type Miner struct {
@@ -23,7 +17,19 @@ type Miner struct {
 	Coal  int64
 }
 
-func NewMiner(miner MinerMethods) *Miner {
+func Hire(level string) *Miner {
+	if level == "junior" {
+		return newMiner(worker.NewJuniorWorker())
+	}
+
+	if level == "middle" {
+		return newMiner(worker.NewMiddleWorker())
+	}
+
+	return newMiner(worker.NewSeniorWorker())
+}
+
+func newMiner(miner MinerMethods) *Miner {
 	return &Miner{
 		Miner: miner,
 	}
@@ -49,6 +55,6 @@ func (m *Miner) Run(ctx context.Context, wg *sync.WaitGroup) {
 	}()
 }
 
-func (m *Miner) Info() WorkerInfo {
+func (m *Miner) Info() models.WorkerInfo {
 	return m.Miner.Info()
 }
